@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { supabaseAdmin } from '../config/supabase';
-import { hashPassword, verifyPassword } from '../utils/password';
-import { sendOtpEmail, generateOtp, verifyAndConsumeOtp } from '../services/otp';
+import { supabaseAdmin } from '../config/supabase.js';
+import { hashPassword, verifyPassword } from '../utils/password.js';
+import { sendOtpEmail, generateOtp, verifyAndConsumeOtp } from '../services/otp.js';
 import jwt from 'jsonwebtoken';
-import { env } from '../config/env';
-import { Role } from '../types/roles';
+import { env } from '../config/env.js';
+import { Role } from '../types/roles.js';
 
 const router = Router();
 

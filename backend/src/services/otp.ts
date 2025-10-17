@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import { supabaseAdmin } from '../config/supabase';
-import { sendEmail } from './email';
+import { supabaseAdmin } from '../config/supabase.js';
+import { sendEmail } from './email.js';
 
 export async function generateOtp(email: string): Promise<string> {
 	const code = crypto.randomInt(0, 1000000).toString().padStart(6, '0');

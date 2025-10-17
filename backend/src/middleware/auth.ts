@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { env } from '../config/env';
-import { Role } from '../types/roles';
+import { env } from '../config/env.js';
+import { Role } from '../types/roles.js';
 
 export type JwtUser = {
 	id: string;
