@@ -3,6 +3,7 @@ import os
 import json
 import joblib
 import pandas as pd
+from features import add_features  # ensure unpickling can resolve import path
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--event_type', required=True)
