@@ -14,25 +14,39 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 }
 
 export default function App() {
+	const { token, role, logout } = useAuth();
 	return (
-		<div style={{ maxWidth: 960, margin: '0 auto', padding: 16 }}>
-			<nav style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-				<Link to="/">Home</Link>
-				<Link to="/login">Login</Link>
-				<Link to="/signup">Signup</Link>
-				<Link to="/student">Student</Link>
-				<Link to="/category">Category</Link>
-				<Link to="/budget">Budget</Link>
-			</nav>
-			<Routes>
-				<Route path="/" element={<Navigate to="/login" />} />
-				<Route path="/login" element={<Login />} />
-				<Route path="/signup" element={<Signup />} />
-				<Route path="/student" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
-				<Route path="/student/submit" element={<PrivateRoute><SubmitProposal /></PrivateRoute>} />
-				<Route path="/category" element={<PrivateRoute><CategoryQueue /></PrivateRoute>} />
-				<Route path="/budget" element={<PrivateRoute><BudgetQueue /></PrivateRoute>} />
-			</Routes>
+		<div className="min-h-screen bg-gray-50">
+			<header className="bg-white border-b">
+				<div className="container mx-auto px-4 py-3 flex items-center justify-between">
+					<Link to="/" className="text-lg font-semibold text-gray-900">EMS</Link>
+					<nav className="flex items-center gap-4 text-sm">
+						<Link className="text-gray-600 hover:text-gray-900" to="/login">Login</Link>
+						<Link className="text-gray-600 hover:text-gray-900" to="/signup">Signup</Link>
+						<Link className="text-gray-600 hover:text-gray-900" to="/student">Student</Link>
+						<Link className="text-gray-600 hover:text-gray-900" to="/category">Category</Link>
+						<Link className="text-gray-600 hover:text-gray-900" to="/budget">Budget</Link>
+						{token && (
+							<button onClick={logout} className="ml-2 inline-flex items-center rounded-md bg-gray-100 px-3 py-1.5 text-gray-700 hover:bg-gray-200">Logout{role ? ` (${role})` : ''}</button>
+						)}
+					</nav>
+				</div>
+			</header>
+			<main className="container mx-auto px-4 py-6">
+				<Routes>
+                    <Route path="/" element={
+                        token
+                            ? <Navigate to={role === 'category_reviewer' ? '/category' : role === 'budget_reviewer' ? '/budget' : '/student'} />
+                            : <Navigate to="/login" />
+                    } />
+					<Route path="/login" element={<Login />} />
+					<Route path="/signup" element={<Signup />} />
+					<Route path="/student" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+					<Route path="/student/submit" element={<PrivateRoute><SubmitProposal /></PrivateRoute>} />
+					<Route path="/category" element={<PrivateRoute><CategoryQueue /></PrivateRoute>} />
+					<Route path="/budget" element={<PrivateRoute><BudgetQueue /></PrivateRoute>} />
+				</Routes>
+			</main>
 		</div>
 	);
 }
