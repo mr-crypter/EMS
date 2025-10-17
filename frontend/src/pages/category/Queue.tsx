@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useApi } from '../../lib/api';
 
 export default function CategoryQueue(){
@@ -6,9 +6,18 @@ export default function CategoryQueue(){
 	const [items, setItems] = useState<any[]>([]);
 	const [assist, setAssist] = useState<Record<string, any>>({});
 	const [error, setError] = useState<string | null>(null);
+	const md = useMemo(() => {
+		const marked = (window as any).marked;
+		if (marked?.Parser) {
+			return new marked.Parser();
+		}
+		return null;
+	}, []);
 
-	function refresh(){
-		request<any[]>('/proposals/pending/category').then(setItems).catch((e)=> setError(String(e)));
+	function refresh() {
+		request<any[]>('/proposals/pending/category')
+			.then(setItems)
+			.catch((e) => setError(String(e)));
 	}
 	useEffect(() => { refresh(); }, []);
 
@@ -22,23 +31,27 @@ export default function CategoryQueue(){
 	}
 
 	return (
-		<div>
-			<h2>Category Review Queue</h2>
-			{error && <div style={{ color: 'red' }}>{error}</div>}
+		<div className="space-y-4">
+			<h2 className="text-xl font-semibold">Category Review Queue</h2>
+			{error && <div className="text-red-600 text-sm">{error}</div>}
 			{items.map((p) => (
-				<div key={p.id} style={{ border: '1px solid #ccc', padding: 8, marginBottom: 8 }}>
-					<div><b>{p.category}</b> Footfall {p.footfall} Budget {p.budget}</div>
-					<p>{p.description}</p>
-					<div style={{ display: 'flex', gap: 8 }}>
-						<button onClick={() => doAssist(p.id)}>LLM Assist</button>
-						<button onClick={() => approve(p.id)}>Approve for Budget</button>
+				<div key={p.id} className="rounded border bg-white p-4">
+					<div className="flex items-center justify-between">
+						<div>
+							<div className="font-medium">{p.category}</div>
+							<div className="text-sm text-gray-600">Footfall {p.footfall} • Budget {p.budget}</div>
+						</div>
+						<div className="flex gap-2">
+							<button onClick={() => doAssist(p.id)} className="rounded bg-indigo-600 text-white px-3 py-2 hover:bg-indigo-700">Re-run LLM</button>
+							<button onClick={() => approve(p.id)} className="rounded bg-emerald-600 text-white px-3 py-2 hover:bg-emerald-700">Approve</button>
+						</div>
 					</div>
-					{assist[p.id] && (
-						<div style={{ marginTop: 8 }}>
-							<h4>Summary</h4>
-							<p>{assist[p.id].summary}</p>
-							<h4>Suggestions</h4>
-							<pre style={{ whiteSpace: 'pre-wrap' }}>{assist[p.id].suggestions}</pre>
+					{(p.llm_summary || assist[p.id]) && (
+						<div className="mt-3">
+							<h4 className="font-semibold">Summary</h4>
+							<p className="text-sm text-gray-700">{assist[p.id]?.summary || p.llm_summary}</p>
+							<h4 className="font-semibold mt-2">Suggestions</h4>
+							<div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: (window as any).marked?.parse(assist[p.id]?.suggestions || p.llm_suggestions || '') || (assist[p.id]?.suggestions || p.llm_suggestions) }} />
 						</div>
 					)}
 				</div>
