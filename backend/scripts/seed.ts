@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { supabaseAdmin } from '../src/config/supabase';
-import { hashPassword } from '../src/utils/password';
+import { supabaseAdmin } from '../src/config/supabase.js';
+import { hashPassword } from '../src/utils/password.js';
 
 async function main(){
 	const reviewers = [
