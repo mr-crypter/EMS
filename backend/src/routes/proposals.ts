@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { requireAuth, requireRole } from '../middleware/auth';
-import { supabaseAdmin } from '../config/supabase';
-import { Role } from '../types/roles';
-import { summarizeAndSuggest } from '../services/gemini';
-import { predictFeasibility } from '../services/ml';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import { supabaseAdmin } from '../config/supabase.js';
+import { Role } from '../types/roles.js';
+import { summarizeAndSuggest } from '../services/gemini.js';
+import { predictFeasibility } from '../services/ml.js';
 
 const router = Router();
 
@@ -16,23 +16,37 @@ const CreateSchema = z.object({
 });
 
 router.post('/', requireAuth, requireRole(['student' as Role]), async (req, res) => {
-	const parse = CreateSchema.safeParse(req.body);
-	if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
-	const { description, budget, footfall, category } = parse.data;
-	const { data, error } = await supabaseAdmin
-		.from('proposals')
-		.insert({
-			student_id: req.user!.id,
-			description,
-			budget,
-			footfall,
-			category,
-			status: 'submitted'
-		})
-		.select('*')
-		.single();
-	if (error) return res.status(500).json({ error: error.message });
-	return res.json(data);
+    const parse = CreateSchema.safeParse(req.body);
+    if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
+    const { description, budget, footfall, category } = parse.data;
+
+    // Auto-generate LLM summary/suggestions at submission time
+    let llm_summary: string | undefined;
+    let llm_suggestions: string | undefined;
+    try {
+        const assist = await summarizeAndSuggest(description);
+        llm_summary = assist.summary;
+        llm_suggestions = assist.suggestions;
+    } catch (_) {
+        // If LLM fails, still accept submission
+    }
+
+    const { data, error } = await supabaseAdmin
+        .from('proposals')
+        .insert({
+            student_id: req.user!.id,
+            description,
+            budget,
+            footfall,
+            category,
+            status: 'submitted',
+            llm_summary,
+            llm_suggestions
+        })
+        .select('*')
+        .single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data);
 });
 
 router.get('/mine', requireAuth, requireRole(['student' as Role]), async (req, res) => {
@@ -73,12 +87,20 @@ router.post('/:id/llm-assist', requireAuth, requireRole(['category_reviewer' as 
 
 router.post('/:id/category-approve', requireAuth, requireRole(['category_reviewer' as Role]), async (req, res) => {
 	const { id } = req.params;
-	const { error } = await supabaseAdmin
-		.from('proposals')
-		.update({ status: 'category_approved' })
-		.eq('id', id);
-	if (error) return res.status(500).json({ error: error.message });
-	return res.json({ ok: true });
+    // Only allow transition from 'submitted' to 'category_approved'
+    const { data: proposal, error: pErr } = await supabaseAdmin
+        .from('proposals')
+        .select('id,status')
+        .eq('id', id)
+        .single();
+    if (pErr || !proposal) return res.status(404).json({ error: 'Not found' });
+    if (proposal.status !== 'submitted') return res.status(400).json({ error: 'Invalid state transition' });
+    const { error } = await supabaseAdmin
+        .from('proposals')
+        .update({ status: 'category_approved' })
+        .eq('id', id);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ ok: true });
 });
 
 router.get('/pending/budget', requireAuth, requireRole(['budget_reviewer' as Role]), async (_req, res) => {
@@ -91,17 +113,42 @@ router.get('/pending/budget', requireAuth, requireRole(['budget_reviewer' as Rol
 	return res.json(data);
 });
 
+// Feasibility preview (no state change) for budget reviewers
+router.get('/:id/feasibility', requireAuth, requireRole(['budget_reviewer' as Role]), async (req, res) => {
+    const { id } = req.params;
+    const { data: proposal, error: pErr } = await supabaseAdmin
+        .from('proposals')
+        .select('id, category, footfall, budget')
+        .eq('id', id)
+        .single();
+    if (pErr || !proposal) return res.status(404).json({ error: 'Not found' });
+    try {
+        const ml = await predictFeasibility(proposal.category, proposal.footfall, proposal.budget);
+        return res.json(ml);
+    } catch (e: any) {
+        return res.status(500).json({ error: String(e.message || e) });
+    }
+});
+
 const BudgetReviewSchema = z.object({ decision: z.enum(['approve', 'reject']) });
 router.post('/:id/budget-review', requireAuth, requireRole(['budget_reviewer' as Role]), async (req, res) => {
 	const dec = BudgetReviewSchema.safeParse(req.body);
 	if (!dec.success) return res.status(400).json({ error: dec.error.flatten() });
 	const { id } = req.params;
-	const { data: proposal, error: pErr } = await supabaseAdmin
+    const { data: proposal, error: pErr } = await supabaseAdmin
 		.from('proposals')
 		.select('id, category, footfall, budget')
 		.eq('id', id)
 		.single();
-	if (pErr || !proposal) return res.status(404).json({ error: 'Not found' });
+    if (pErr || !proposal) return res.status(404).json({ error: 'Not found' });
+    // Only budget reviewer can make final decision, ensure state is category_approved
+    const { data: stateRow, error: sErr } = await supabaseAdmin
+        .from('proposals')
+        .select('status')
+        .eq('id', id)
+        .single();
+    if (sErr || !stateRow) return res.status(404).json({ error: 'Not found' });
+    if (stateRow.status !== 'category_approved') return res.status(400).json({ error: 'Invalid state for budget review' });
 	const ml = await predictFeasibility(proposal.category, proposal.footfall, proposal.budget);
 	const status = dec.data.decision === 'approve' ? 'approved' : 'rejected';
 	const { error } = await supabaseAdmin

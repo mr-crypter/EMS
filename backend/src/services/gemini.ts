@@ -1,13 +1,21 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { env } from '../config/env';
+import { env } from '../config/env.js';
 
 const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 export async function summarizeAndSuggest(description: string): Promise<{ summary: string; suggestions: string }>{
-	const prompt = `You are a university event reviewer assistant. Given an event proposal description, first write a concise 3-4 sentence summary, then list 3-5 concrete improvement suggestions (budget realism, risk, logistics, sponsors). Format:
-Summary:\n...
-Suggestions:\n- ...\n- ...\n- ...\n\nDescription:\n${description}`;
+    const prompt = `You are a university event reviewer assistant. Given an event proposal description, first write a concise 3-4 sentence summary, then output a markdown section titled "Suggestions" with 3-5 bolded bullet points covering logistics, budget realism, risks, and sponsorship. Use this exact format:
+
+Summary:\n<3-4 sentence summary>
+
+Suggestions\n
+-   **<Title>:** <one sentence with concrete, actionable advice>
+-   **<Title>:** <one sentence with concrete, actionable advice>
+-   **<Title>:** <one sentence with concrete, actionable advice>
+-   **<Title>:** <one sentence with concrete, actionable advice>
+
+Description:\n${description}`;
 	const result = await model.generateContent(prompt);
 	const text = result.response.text();
 	const [summaryPart, suggestionsPart] = text.split('Suggestions:');
