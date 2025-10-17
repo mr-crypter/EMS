@@ -4,15 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev": "cross-env CORS_ORIGIN=http://localhost:5173,http://localhost:5174 tsx watch src/index.ts",
     "build": "tsc -p .",
-    "start": "node dist/index.js",
-    "seed": "ts-node-dev --transpile-only scripts/seed.ts",
+    "start": "cross-env CORS_ORIGIN=http://localhost:5173,http://localhost:5174 node dist/index.js",
+    "seed": "tsx scripts/seed.ts",
     "train-ml": "python scripts/ml/train.py --csv ../event_data.csv --out scripts/ml/model.pkl",
     "predict-ml": "python scripts/ml/predict.py --attendees 1000 --expenses 100000 --event_type Seminars"
   },
   "dependencies": {
     "@google/generative-ai": "^0.15.0",
+    "@supabase/supabase-js": "^2.47.10",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -21,16 +22,22 @@
     "nodemailer": "^6.9.14",
     "pg": "^8.12.0",
     "supabase": "^2.6.8",
-    "@supabase/supabase-js": "^2.47.10",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.14",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^22.5.4",
     "@types/nodemailer": "^6.4.15",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.14",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
+    "tsx": "^4.19.2",
+    "cross-env": "^7.0.3",
     "typescript": "^5.6.2"
   }
 }
