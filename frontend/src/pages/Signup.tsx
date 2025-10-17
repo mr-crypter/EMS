@@ -6,7 +6,7 @@ export default function Signup() {
 	const [code, setCode] = useState('');
 	const [stage, setStage] = useState<'register' | 'verify'>('register');
 	const [msg, setMsg] = useState<string | null>(null);
-	const base = (import.meta as any).env.VITE_API_URL || 'http://localhost:4000';
+	const base = ((import.meta as any).env.VITE_API_URL || 'http://localhost:4000');
 
 	async function register(e: React.FormEvent) {
 		e.preventDefault();
@@ -30,21 +30,21 @@ export default function Signup() {
 	}
 
 	return (
-		<div style={{ display: 'grid', gap: 8, maxWidth: 360 }}>
-			<h2>Signup</h2>
+		<div className="mx-auto max-w-md bg-white rounded-lg shadow border p-6">
+			<h2 className="text-xl font-semibold mb-4">Signup</h2>
 			{stage === 'register' ? (
-				<form onSubmit={register} style={{ display: 'grid', gap: 8 }}>
-					<input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
-					<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
-					<button type="submit">Register</button>
+				<form onSubmit={register} className="space-y-3">
+					<input className="w-full rounded border px-3 py-2" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+					<input className="w-full rounded border px-3 py-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
+					<button className="w-full rounded bg-blue-600 text-white px-3 py-2 hover:bg-blue-700" type="submit">Register</button>
 				</form>
 			) : (
-				<form onSubmit={verify} style={{ display: 'grid', gap: 8 }}>
-					<input value={code} onChange={(e) => setCode(e.target.value)} placeholder="OTP Code" />
-					<button type="submit">Verify</button>
+				<form onSubmit={verify} className="space-y-3">
+					<input className="w-full rounded border px-3 py-2" value={code} onChange={(e) => setCode(e.target.value)} placeholder="OTP Code" />
+					<button className="w-full rounded bg-emerald-600 text-white px-3 py-2 hover:bg-emerald-700" type="submit">Verify</button>
 				</form>
 			)}
-			{msg && <div>{msg}</div>}
+			{msg && <div className="text-sm mt-3 text-gray-700">{msg}</div>}
 		</div>
 	);
 }
