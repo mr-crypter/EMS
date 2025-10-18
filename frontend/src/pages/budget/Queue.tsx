@@ -41,9 +41,8 @@ export default function BudgetQueue(){
                                     <div className="text-xs text-gray-600">Feasibility</div>
                                     <div className="h-2 w-full rounded bg-gray-100 overflow-hidden">
                                         <div
-                                            className={`${ml[p.id].score < 0.5 ? 'bg-red-500' : ml[p.id].score < 0.7 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                                            className={`h-2 ${ml[p.id].score < 0.5 ? 'bg-red-500' : ml[p.id].score < 0.7 ? 'bg-yellow-500' : 'bg-green-500'}`}
                                             style={{ width: `${Math.round(ml[p.id].score * 100)}%` }}
-                                            className={`h-2`}
                                         />
                                     </div>
                                     <div className="mt-1 text-xs text-gray-700">

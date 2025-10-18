@@ -1,22 +1,25 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApi } from '../../lib/api';
+import { marked } from 'marked';
+
+// Configure marked for better rendering
+marked.setOptions({
+	breaks: true,
+	gfm: true
+});
 
 export default function CategoryQueue(){
 	const { request } = useApi();
 	const [items, setItems] = useState<any[]>([]);
 	const [assist, setAssist] = useState<Record<string, any>>({});
 	const [error, setError] = useState<string | null>(null);
-	const md = useMemo(() => {
-		const marked = (window as any).marked;
-		if (marked?.Parser) {
-			return new marked.Parser();
-		}
-		return null;
-	}, []);
 
 	function refresh() {
 		request<any[]>('/proposals/pending/category')
-			.then(setItems)
+			.then((data) => {
+				console.log('Category queue data:', data);
+				setItems(data);
+			})
 			.catch((e) => setError(String(e)));
 	}
 	useEffect(() => { refresh(); }, []);
@@ -51,7 +54,16 @@ export default function CategoryQueue(){
 							<h4 className="font-semibold">Summary</h4>
 							<p className="text-sm text-gray-700">{assist[p.id]?.summary || p.llm_summary}</p>
 							<h4 className="font-semibold mt-2">Suggestions</h4>
-							<div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: (window as any).marked?.parse(assist[p.id]?.suggestions || p.llm_suggestions || '') || (assist[p.id]?.suggestions || p.llm_suggestions) }} />
+							<div 
+								className="prose prose-sm max-w-none text-gray-700"
+								dangerouslySetInnerHTML={{ 
+									__html: marked(assist[p.id]?.suggestions || p.llm_suggestions || '') 
+								}} 
+							/>
+							{/* Debug info */}
+							<div className="mt-2 text-xs text-gray-500">
+								Debug: llm_summary={p.llm_summary ? 'exists' : 'null'}, llm_suggestions={p.llm_suggestions ? 'exists' : 'null'}
+							</div>
 						</div>
 					)}
 				</div>
