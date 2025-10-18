@@ -27,7 +27,9 @@ router.post('/', requireAuth, requireRole(['student' as Role]), async (req, res)
         const assist = await summarizeAndSuggest(description);
         llm_summary = assist.summary;
         llm_suggestions = assist.suggestions;
-    } catch (_) {
+        console.log('LLM generated:', { summary: llm_summary, suggestions: llm_suggestions });
+    } catch (error) {
+        console.error('LLM generation failed:', error);
         // If LLM fails, still accept submission
     }
 
